@@ -1,6 +1,57 @@
 const { Pokemon,Type } = require('./db.js')
 const axios = require("axios")
 const re = /[a-zA-Z]/
+const initialPage = `https://pokeapi.co/api/v2/pokemon`
+let lastPage = `https://pokeapi.co/api/v2/pokemon`
+
+function pokemonFiltrerData (pokemon){
+    // Esta funcion filtra los datos que requiere el front de un
+    // objeto pokemon brindado por la api y retorna el objeto filtrado
+    const detailData = {}
+    detailData.id = pokemon.data.id
+    detailData.name = pokemon.data.name
+    detailData.image = pokemon.data.sprites.other["official-artwork"].front_default 
+    detailData.health = pokemon.data.stats[0].base_stat
+    detailData.attack = pokemon.data.stats[1].base_stat
+    detailData.defense = pokemon.data.stats[2].base_stat
+    detailData.speed = pokemon.data.stats[5].base_stat
+    detailData.height = pokemon.data.height
+    detailData.weight = pokemon.data.weight
+    detailData.types = []
+    // Se asegura de asignar todos los tipos posibles que tenga el pokemon
+    const dataTypes = pokemon.data.types
+    for (let index = 0; index < dataTypes.length; index++) {
+        detailData.types.push(dataTypes[index].type.name)
+    }
+    return detailData
+}
+function pokemonFiltrerDataDB (pokemon){
+    // Esta funcion filtra los datos que requiere el front de un
+    // objeto pokemon brindado por la api y retorna el objeto filtrado
+    const returnArray = []
+    const detailData = {}
+    for (let index = 0; index < pokemon.length; index++) {
+    
+        detailData.id = pokemon[index].id
+        detailData.name = pokemon[index].name
+        detailData.image = pokemon[index].image
+        detailData.health = pokemon[index].health
+        detailData.attack = pokemon[index].attack 
+        detailData.defense = pokemon[index].defense
+        detailData.speed = pokemon[index].speed
+        detailData.height = pokemon[index].height
+        detailData.weight = pokemon[index].weight
+        detailData.types = []
+        if (pokemon[index].types[0].name) {detailData.types.push( pokemon[index].types[0].name) } 
+        if (pokemon[index].types[1]) {detailData.types.push(pokemon[index].types[1].name )  } 
+        
+        returnArray.push({...detailData})
+        
+    }
+
+    return returnArray
+}
+
 
 module.exports = { 
     getAllPokemons: async (req,res)=>{
@@ -32,6 +83,56 @@ module.exports = {
        
 },
 
+getPokemons: async (req,res)=>{
+    try {
+        let pokeArray = []
+        const response = await axios.get(lastPage)
+        .then( (response) =>{
+            pokeArray = response.data.results
+           return axios.get(response.data.next) 
+        })
+        .then( (response) =>{
+            pokeArray = [...pokeArray,...response.data.results]
+           return axios.get(response.data.next) 
+        })
+        .then( (response) =>{
+            pokeArray = [...pokeArray,...response.data.results]
+           return axios.get(response.data.next) 
+        })
+        .then( (response) =>{
+            pokeArray = [...pokeArray,...response.data.results]
+           return axios.get(response.data.next) 
+        })
+
+
+        let jsonForFrontend = {api:[],db:[]}
+        const apiArr = []
+
+         for (let index = 0; index < pokeArray.length; index++) {
+            await axios.get(pokeArray[index].url)
+            .then((response)=>{
+                
+                apiArr.push(pokemonFiltrerData(response))  // filtra los datos del pokemon en response y devuelve un objeto limpio que se añade al array
+            })  
+        } 
+        jsonForFrontend.api = apiArr
+
+        await Pokemon.findAll({include: Type})
+        .then( (response) => {
+
+
+            jsonForFrontend.db = pokemonFiltrerDataDB(response)
+
+        })
+
+    
+        res.status(200).json(jsonForFrontend)
+
+       } catch (error) {
+        res.status(400).send(error)
+       }
+},
+
 getPokeById: async (req,res)=>{
  
     // Solicita a la api el pokemon con el id pasado mediante params
@@ -46,25 +147,8 @@ getPokeById: async (req,res)=>{
         const detailData = {}
         await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`)
         .then( (response) => {           
-                // Completa el objeto detailData con la informacion que brinda la api
-            detailData.id = response.data.id
-            detailData.name = response.data.name
-            detailData.image = response.data.sprites.other["official-artwork"].front_default 
-            detailData.health = response.data.stats[0].base_stat
-            detailData.attack = response.data.stats[1].base_stat
-            detailData.defense = response.data.stats[2].base_stat
-            detailData.speed = response.data.stats[5].base_stat
-            detailData.height = response.data.height
-            detailData.weight = response.data.weight
-            detailData.types = []
-            // Se asegura de asignar todos los tipos posibles que tenga el pokemon
-            const dataTypes = response.data.types
-            for (let index = 0; index < dataTypes.length; index++) {
-                
-                detailData.types.push(dataTypes[index].type.name)
-            }
-            // Devuelve un objeto con los datos para el detalle que necesita el front-end
-            res.status(200).send(detailData)
+
+            res.status(200).send(pokemonFiltrerData (response))
         })
         .catch( (error) => { res.status(404).json({msg: "Fallo de busqueda en api externa, el id no coincide", error}) } )
     }
@@ -75,20 +159,43 @@ getPokeByName: async (req,res)=>{
     const pokeFound = []
     const name = req.query.pokeName.toLowerCase()
 
-    await axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`)
+////////////////// Traer pokemones de la API ////////////////////////////////////////////
+
+     await axios.get(`https://pokeapi.co/api/v2/pokemon/${name}`)
     .then( (response) => {
-        pokeFound.push(response.data)})
+        pokeFound.push( pokemonFiltrerData (response) )})
 
     .catch(function (error) {
-        console.log(error)})
+        console.log({msg: "No se encontraron pokemons con el nombre solicitado en la API",error})})
 
-     await Pokemon.findOne({where: {name: name}})
-    .then( (response) =>{
-        if (response.length > 0){ // Verifica que haya algo dentro de la respuesta
-         pokeFound.push(response[0])}} )
+////////////////// Traer pokemones de la DB ////////////////////////////////////////////
 
-    .catch(function (error) {
-        console.log(error)})
+        try {
+            const detailData = {}
+            const pokemons = await Pokemon.findAll({where: {name: name},include: Type})
+            if (pokemons){
+                for (let index = 0; index < pokemons.length; index++) {
+
+                    detailData.id = pokemons[index].id
+                    detailData.name = pokemons[index].name
+                    detailData.image = pokemons[index].image
+                    detailData.health = pokemons[index].health
+                    detailData.attack = pokemons[index].attack 
+                    detailData.defense = pokemons[index].defense
+                    detailData.speed = pokemons[index].speed
+                    detailData.height = pokemons[index].height
+                    detailData.weight = pokemons[index].weight
+                    detailData.types = []
+                    if (pokemons[index].types[0].name) {detailData.types.push( pokemons[index].types[0].name) } 
+                    if (pokemons[index].types[1].name) {detailData.types.push(pokemons[index].types[1].name )  } 
+                   
+                    pokeFound.push(detailData)
+                }
+            }
+
+        } catch (error) {
+            console.log({msg: "No se encontraron pokemons con el nombre solicitado en la DB",error})
+        }
 
     if (pokeFound.length === 0) return res.status(404).json({msg: "No se encontraron pokemons con el nombre solicitado"})
     else res.status(200).send(pokeFound)
@@ -151,6 +258,7 @@ addPokemon: async (req,res)=>{
         "velocity": 3.5,
         "height": 1.50,
         "weight": 60.7,
+        
     },
     pokemonTypes: ["type1","type2", "etc"] ,
 }
