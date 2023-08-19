@@ -27,7 +27,7 @@ function pokemonFiltrerData (pokemon){
 }
 function pokemonFiltrerDataDB (pokemon){
     // Esta funcion filtra los datos que requiere el front de un
-    // objeto pokemon brindado por la api y retorna el objeto filtrado
+    // objeto pokemon brindado por la DB y retorna el objeto filtrado
     const returnArray = []
     const detailData = {}
     for (let index = 0; index < pokemon.length; index++) {
@@ -85,7 +85,9 @@ module.exports = {
 
 getPokemons: async (req,res)=>{
     try {
+        /////////////// Peticion a la API /////////////////
         let pokeArray = []
+        // Encadena peticiones para traer todos los resultados de de la API
         const response = await axios.get(lastPage)
         .then( (response) =>{
             pokeArray = response.data.results
@@ -101,25 +103,28 @@ getPokemons: async (req,res)=>{
         })
         .then( (response) =>{
             pokeArray = [...pokeArray,...response.data.results]
+            console.log(response.data)
            return axios.get(response.data.next) 
         })
-
+        // En este punto, pokeArray tiene las respuestas de todos los "paginados" de 20
+        // Con los que responde la API, y cada respuesta solo contiene el nombre del pokemon
+        // y su url, por lo que a continuacion, se recorren todas las url para extraer los pokemones
 
         let jsonForFrontend = {api:[],db:[]}
         const apiArr = []
-
          for (let index = 0; index < pokeArray.length; index++) {
-            await axios.get(pokeArray[index].url)
+            await axios.get(pokeArray[index].url) // entra a la url de cada pokemon para adquirirlo
             .then((response)=>{
                 
                 apiArr.push(pokemonFiltrerData(response))  // filtra los datos del pokemon en response y devuelve un objeto limpio que se añade al array
             })  
         } 
+
+        //////////// Peticion a la DB ////////////
         jsonForFrontend.api = apiArr
 
         await Pokemon.findAll({include: Type})
         .then( (response) => {
-
 
             jsonForFrontend.db = pokemonFiltrerDataDB(response)
 
@@ -138,12 +143,14 @@ getPokeById: async (req,res)=>{
     // Solicita a la api el pokemon con el id pasado mediante params
     const id = req.params.idPokemon
     
-    if (re.test(id)){
-        await Pokemon.findOne({where: {id: id}})
-        .then( (response) => {res.send(response)} )
+    if (re.test(id)){ // Si el ID del pokemon contiene una letra, significa que es de la base de datos local
+        await Pokemon.findOne({where: {id: id},include: Type})
+        .then( (response) => {
+            res.send(pokemonFiltrerDataDB ([response])[0])
+        } )
         .catch( (error) => { res.status(404).json({msg: "Fallo de busqueda, no se encuentran coincidencias en la base de datos local", error}) } )
     }
-    else {
+    else {          // en cambio, si el ID es solo un numero, el porkemon pertenece a la API
         const detailData = {}
         await axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`)
         .then( (response) => {           

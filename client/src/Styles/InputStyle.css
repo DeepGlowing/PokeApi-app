@@ -1,0 +1,19 @@
+input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 48px;
+    font-size: 14px;
+  }
+
+select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 48px;
+    font-size: 14px;
+  }
+button {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 48px;
+    font-size: 14px;
+  }

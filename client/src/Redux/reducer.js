@@ -13,6 +13,7 @@ const initialState = {
 }
 
 function reducer (state = initialState ,{type,payload}){
+   console.log(state.filtrer)
     switch(type){
                         
         case ADD_POKEMONS: return {...state,  localPokemons: payload.api,  pokemonsDB: payload.db, showingPokemons: [...payload.api,...payload.db], tfiltrer: 12}
@@ -78,34 +79,32 @@ function reducer (state = initialState ,{type,payload}){
                case "API":
                   if(
                      payload === "all"){filtredPokemons = [...state.localPokemons]
-                     return {...state,  showingPokemons: filtredPokemons, filtrer: 17}
+                     return {...state,  showingPokemons: filtredPokemons, filtrer: payload+17}
                   }
                   else { 
                      filtredPokemons = [...state.localPokemons].filter( (pokemon) => pokemon.types.includes(payload)  )
-                     return {...state,  showingPokemons: filtredPokemons, filtrer: 18}
+                     return {...state,  showingPokemons: filtredPokemons, filtrer: payload+18}
                   }
 
                case "DB":
                   if(payload === "all"){ 
                      filtredPokemons = [...state.pokemonsDB]
-                     return {...state,  showingPokemons: filtredPokemons, filtrer: 15}
+                     return {...state,  showingPokemons: filtredPokemons, filtrer: payload+15}
                   }
                   else{  
                      filtredPokemons = [...state.pokemonsDB].filter( (pokemon) => pokemon.types.includes(payload)  )
-                     return {...state,  showingPokemons: filtredPokemons, filtrer: 16}
+                     return {...state,  showingPokemons: filtredPokemons, filtrer: payload+16}
                   }
                 
                case "ALL":
                   if(payload === "all"){
                      filtredPokemons = [...state.localPokemons,...state.pokemonsDB]
-                     return {...state,  showingPokemons: filtredPokemons, filtrer: 14}
+                     return {...state,  showingPokemons: filtredPokemons, filtrer: payload+14}
                   }
                   else {
                      filtredPokemons = [...state.localPokemons,...state.pokemonsDB].filter( (pokemon) => pokemon.types.includes(payload)  )
-                     return {...state,  showingPokemons: filtredPokemons, filtrer: 6}
+                     return {...state,  showingPokemons: filtredPokemons, filtrer: payload+6}
                   }
-      
-                  console.log("Filtred All ",state.showingPokemons)
                   
                default:
                   break;
@@ -120,6 +119,8 @@ function reducer (state = initialState ,{type,payload}){
         default:
             return state
     }
+   
 }
+
 
 export default reducer

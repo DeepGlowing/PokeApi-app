@@ -2,9 +2,10 @@ import {useEffect,useState} from 'react'
 import styled from 'styled-components'
 import PokeCards from '../components/PokeCards'
 import ToolsBar from '../components/ToolsBar'
-import { useDispatch, useSelector } from 'react-redux'
-import { setIndexCard } from "../Redux/actions"
+import { useDispatch, useSelector,} from 'react-redux'
+import { setIndexCard,filtrerByType } from "../Redux/actions"
 import PokeCard from "../components/PokeCard"
+import NavBar from '../components/Nav'
 
 
 
@@ -13,12 +14,27 @@ background-color: #c3c5ce;
 display: flex;
 flex-wrap: nowrap;
 justify-content: flex-start;
+width: 100vw;
+padding-bottom: 250px;
+height: 100vh;
+
 
 `
 const ButtonsDiv = styled.div`
-//background-color: #181863;
+   display: flex;
+   flex-wrap: wrap;
+   justify-content: center;
+   margin-left: 500px;
+
+`
+const Container1Div = styled.div`
 display: flex;
 flex-wrap: wrap;
+
+`
+const MidContainer = styled.div`
+ flex-wrap: nowrap;
+ flex-direction: column;
 
 `
 
@@ -42,12 +58,12 @@ export default function HomeView() {
      setCurrentPokemons(pokeArray.splice(-POKEMONS_PER_PAGE,POKEMONS_PER_PAGE) )
      dispatch(setIndexCard(0))
      setCurrentPage(1)
+     dispatch(filtrerByType("all"))
   },[])
   useEffect( () =>{
    setCurrentPokemons(pokeArray.splice(-POKEMONS_PER_PAGE,POKEMONS_PER_PAGE) )
    dispatch(setIndexCard(0))
    setCurrentPage(1)
-   console.log("load forzado")
 },[checkForLoadApp])
   useEffect( () =>{
     setCurrentPokemons(pokeArray.splice(0,POKEMONS_PER_PAGE) )
@@ -88,17 +104,25 @@ export default function HomeView() {
 
 
   return (
-    <ViewContainer>
+   <div>
+      <NavBar></NavBar>
+      <ViewContainer>
         <ToolsBar parentUpdate={update}></ToolsBar>
-        <ButtonsDiv>
-        <ButtonsDiv>
-         <button onClick={prevHandler}>Previus Page</button>
-         <h3>{currentPage}</h3>
-         <button onClick={nextHandler}>Next Page</button>
-      </ButtonsDiv>
-        <PokeCards Cards={Cards}></PokeCards>
-        </ButtonsDiv>
+         <MidContainer>
+
+            <ButtonsDiv>
+               <button onClick={prevHandler}>Previus Page</button>
+               <h3>{currentPage}</h3>
+               <button onClick={nextHandler}>Next Page</button>
+            </ButtonsDiv>
+            <Container1Div>
+               <PokeCards Cards={Cards}></PokeCards>
+            </Container1Div>
+
+         </MidContainer>
     </ViewContainer>
+   </div>
+
     
   )
 }

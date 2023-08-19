@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import styled from 'styled-components'
 import {orderByNameDescend,orderByNameAscend,orderByID,
   orderByAttackAscend,orderByAttackDescend,filtrerByType,
@@ -9,24 +9,98 @@ import axios from "axios"
 
 
 const ToolsContainer = styled.div`
-    display: flex;
-    max-height: 100%;
-    max-width: 156rem;
-    justify-content: flex-start;
-    flex-direction: column;
-    margin-right: 2rem;
-    margin-left: 2rem;
-    margin-top: 2rem;
+  background-color: #d6e2ec;
+  padding-right: 3rem;
+  padding-left: 3rem;
+  padding-top: 1rem;
+  padding-bottom: 1164px;
+  justify-content: flex-start;
+  flex-direction: column;
     
 `
+const TypeButtons = styled.div`
+  padding: 3px;
+  background-color: ${props => (props.selected ? props.$selectedColor : props.$normalColor)};
+  border-radius: 2rem;
+  border-color: #d8b4dd;
+  color: white;
+  text-align: center;
+  margin: 3px;
+  font-size: 20px;
+  font-family: 'Passion One';
+  //text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  cursor: pointer;
 
+  &:hover {
+    background-color: ${(props)=>(props.$hoverColor)};
+    
+  }
+`
+const OrdenContainer = styled.div`
+display:  flex;
+flex-direction: column;
+flex-wrap: nowrap;
 
+`
+const OriginContainer = styled.div`
+display:  flex;
+flex-direction: column;
+flex-wrap: nowrap;
+
+`
+
+const AllButton = styled.div`
+  padding: 4px;
+  background-color: ${props => (props.selected ? `#333333`: `#b8b8b8`)};
+  border-radius: 2rem;
+  border-color: #d8b4dd;
+  color: white;
+  text-align: center;
+  margin: 3px;
+  font-size: 20px;
+  //text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  font-family: 'Passion One';
+
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${`#e6e6e6`};
+    
+  }
+`
+
+const pokemonTypes = [
+  {name: "fire",normalColor: `#f3a347` ,hoverColor:`#f5c39a`, selectedColor: `#292733`},
+  {name: "water",normalColor: `#4a90c9` ,hoverColor:`#9ebaf0`, selectedColor: `#292733`},
+  {name: "normal",normalColor: `#b1a59d` ,hoverColor:`#d3bebe`, selectedColor: `#292733`},
+  {name: "grass",normalColor: `#4eb34e` ,hoverColor:`#92e496`, selectedColor: `#292733`},
+  {name: "electric",normalColor: `#ecd821` ,hoverColor:`#ffec97`, selectedColor: `#292733`},
+  {name: "ice",normalColor: `#6ccec9` ,hoverColor:`#9ed9db`, selectedColor: `#292733`},
+  {name: "fighting",normalColor: `#c73d6b` ,hoverColor:`#fd6d85`, selectedColor: `#292733`},
+  {name: "poison",normalColor: `#a15dc9` ,hoverColor:`#a979c0`, selectedColor:`#292733`},
+  {name: "ground",normalColor: `#a0633f` ,hoverColor:`#caab67`, selectedColor:`#292733`},
+  {name: "flying",normalColor: `#7b9ddb` ,hoverColor:`#afbcf7`, selectedColor: `#292733`},
+  {name: "psychic",normalColor: `#ee5073` ,hoverColor:`#e995aa`, selectedColor: `#292733`},
+  {name: "bug",normalColor: `#98c94b` ,hoverColor:`#d9e9ae`, selectedColor: `#292733`},
+  {name: "rock",normalColor: `#928961` ,hoverColor:`#ccc6a2`, selectedColor: `#292733`},
+  {name: "ghost",normalColor: `#5150a0` ,hoverColor:`#8978d4`, selectedColor: `#292733`},
+  {name: "dragon",normalColor: `#226ad6` ,hoverColor:`#a073f3`, selectedColor: `#292733`},
+  {name: "dark",normalColor: `#3d4152` ,hoverColor:`#744361`, selectedColor: `#292733` },
+  {name: "steel",normalColor: `#59757a` ,hoverColor:`#99b1bb`, selectedColor: `#292733`},
+  {name: "fairy",normalColor: `#dd85ca` ,hoverColor:`#f7c6d9`, selectedColor: `#292733`},
+  
+]
 
 export default function ToolsBar({parentUpdate}) {
+
+   
     const dispatch = useDispatch()
     const [nameValue,setNameValue] = useState("")
     const [typeSelected,setTypeSelected] = useState("water")
 
+
+
+////////////// Busqueda por nombre ///////////////////
 
   function handleChange(event){
     setNameValue(event.target.value)
@@ -37,7 +111,6 @@ export default function ToolsBar({parentUpdate}) {
       console.log('Se inicio la busqueda del pokemon: '+nameValue)
       axios.get(`http://localhost:3001/pokemons/name?pokeName=${nameValue}`)
       .then( (response)=>{
-        console.log("console desde el response",response.data[0])
         dispatch(filtrerByName(response.data[0]))})
       .catch( (error) => {
         console.error(error)
@@ -48,43 +121,61 @@ export default function ToolsBar({parentUpdate}) {
 
 /////////// Seleccion de Tipo /////////////////////
 
-function typeFill () {
-  dispatch(filtrerByType(typeSelected))
-  parentUpdate()
-}
-function typeAll () {
-  dispatch(filtrerByType("all"))
-  parentUpdate()
-}
+  function typeFill () {
+    dispatch(filtrerByType(typeSelected))
+    parentUpdate()
+  }
+  function typeAll () {
+    dispatch(filtrerByType("all"))
+    setTypeSelected("all")
+    parentUpdate()
+  }
 
+  function handleItemClick(type) {
+    dispatch(filtrerByType(type))
+    setTypeSelected(type);
+  }
+  const typeItems = pokemonTypes.map((type,index) => {
+    return <TypeButtons 
+    key = {index} 
+    value = {type.name}
+    $selectedColor = {type.selectedColor}
+    $hoverColor = {type.hoverColor}
+    $normalColor = {type.normalColor}
+    selected={typeSelected === type.name}
+    onClick={() => handleItemClick(type.name)}
+    >{type.name.toUpperCase()}</TypeButtons> 
+  })
 
-function atkFillDes(){
-  dispatch(orderByAttackDescend())
-  parentUpdate()
-}
-
-function atkFillAsc (){
-  dispatch(orderByAttackAscend())
-  parentUpdate()
-}
 
 /////////// Seleccion de Orden ////////////////////
 
-function idOrder(){
-  dispatch(orderByID())
-  parentUpdate() 
-}
+  function atkFillDes(){
+    dispatch(orderByAttackDescend())
+    parentUpdate()
+  }
 
-function orderA_Z(){
-  dispatch(orderByNameDescend())
-  parentUpdate()
-}
+  function atkFillAsc (){
+    dispatch(orderByAttackAscend())
+    parentUpdate()
+  }
 
-function orderZ_A(){
-  dispatch(orderByNameAscend())
-  parentUpdate()
-  
-}
+
+  function idOrder(){
+    dispatch(orderByID())
+    parentUpdate() 
+  }
+
+  function orderA_Z(){
+    dispatch(orderByNameDescend())
+    parentUpdate()
+  }
+
+  function orderZ_A(){
+    dispatch(orderByNameAscend())
+    parentUpdate()
+    
+  }
 
 ////////// Seleccion de Origen ////////////////
 
@@ -119,19 +210,26 @@ function originALL(){
                 placeholder="Pokemon name..."
           ></input>
         <hr></hr>
-        <button onClick={ typeFill }>Filtrar por tipo</button>
-        <button onClick={ typeAll }>Todos los tipos</button>
+        <AllButton  onClick={ typeAll }>All</AllButton >
+        {typeItems}
         <hr></hr>
-        <button onClick={ atkFillDes }>Ataque asc</button>
-        <button onClick={ atkFillAsc }>Ataque des</button>
+        <OriginContainer>
+          <button onClick={ atkFillDes }>Attack Up</button>
+          <button onClick={ atkFillAsc }>Attack down</button>
+        </OriginContainer>
         <hr></hr>
-        <button onClick={ idOrder }>Orden por ID</button>
-        <button onClick={ orderA_Z }>Orden descendente</button>
-        <button onClick={ orderZ_A }>Orden Ascendente</button>
+        <OrdenContainer>
+          <button onClick={ idOrder }>Order por ID</button>
+          <button onClick={ orderA_Z }>Order A_Z</button>
+          <button onClick={ orderZ_A }>Order Z_A</button>
+        </OrdenContainer>
         <hr></hr>
-        <button onClick={ originAPI }>API</button>
-        <button onClick={ originDB }>DB</button>
-        <button onClick={ originALL }>ALL</button>
+        <OriginContainer>
+          <button onClick={ originAPI }>Game Pokemons</button>
+          <button onClick={ originDB }>My Pokemons</button>
+          <button onClick={ originALL }>ALL Pokemons</button>
+        </OriginContainer>
+
     </ToolsContainer>
   )
 }

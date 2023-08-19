@@ -1,7 +1,10 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useState } from "react";
 import styled from 'styled-components'
 import axios from "axios"
+import styles from "../Styles/InputStyle.css"
+import NavBar from '../components/Nav'
+
 
 
 
@@ -9,17 +12,21 @@ const DisplayContainer = styled.div`
  display: flex;
  justify-content: center;
  align-items: center;
- margin-top: 25rem;
+
 `
 
 const FormContainer = styled.div`
 background-color: #494949;
-width: 200px;
+width: 600px;
+height: 720px;
+margin-top: 100px;
 display: flex;
-justify-content: center;
+
 
 `
 const LogForm = styled.form`
+margin-top: 50px;
+margin-left: 50px;
 
 `
 const LabelForm = styled.label`
@@ -51,7 +58,6 @@ margin-left: 11px;
     pokemonTypes: ["type1","type2", "etc"] ,
 }
 */
-const typeArray = ["","fire","water","type4","type5"]
 
 export default function FormView(){
 
@@ -68,7 +74,7 @@ export default function FormView(){
     const [pokeData, setPokeData] = useState(
         {   
             name:  "",
-            image: "",
+            image: null,
             health: 0,
             attack: 0.0,
             defense: 0.0,
@@ -95,12 +101,26 @@ export default function FormView(){
      const [canSubmit, setCanSubmit] = useState(Boolean)
      const [typeValue1, settypeValue1] = useState('')
      const [typeValue2, settypeValue2] = useState('')
+     const [typeArray , setTypeArray ] = useState([])
+     const [fileImage, setFileImage] = useState(null)
+
+    useEffect( async() => {
+        await axios.get("http://localhost:3001/types")
+        .then ( (response) => {
+            const tarr = []
+            response.data.map((item) => {
+                tarr.push(item.name)
+            })
+            setTypeArray(tarr)
+        })
+    } ,[])
 
    async function postPokemon(){
+    
         const pokePackage={
             pokeData: {   
                 "name":  pokeData.name.toLocaleLowerCase(),
-                "image": null,
+                "image": fileImage,
                 "health": pokeData.health,
                 "attack": pokeData.attack,
                 "defense": pokeData.defense,
@@ -111,9 +131,8 @@ export default function FormView(){
             },
             pokemonTypes: [typeValue1,typeValue2]
         }
-
-        const { data } = await axios.post("http://localhost:3001/pokemons", pokePackage);
-        console.log(data);
+        console.log(fileImage)
+        await axios.post("http://localhost:3001/image", pokePackage);
     }
 
     function handleSubmit(event){
@@ -130,23 +149,24 @@ export default function FormView(){
     function handleChange(event){
         const _input = {...pokeData,[event.target.name]: event.target.value}
         setPokeData(_input)
-       if (event.target.name === "type1"){settypeValue1(event.target.value)}
-       if (event.target.name === "type2"){settypeValue2(event.target.value)}
+        if (event.target.name === "image"){setFileImage(event.target.files[0])}
+        if (event.target.name === "type1"){settypeValue1(event.target.value)}
+        if (event.target.name === "type2"){settypeValue2(event.target.value)}
         validation(_input)
 
     }
 
     function validation(inputs){
         let errors = {   
-            name:  "",
-            image: "",
-            health: "",
-            attack: "",
-            defense: "",
-            velocity: "",
-            height: "",
-            weight: "",
-            type: ""
+            name:  " ",
+            image: " ",
+            health: " ",
+            attack: " ",
+            defense: " ",
+            velocity: " ",
+            height: " ",
+            weight: " ",
+            type: " "
             
         }
 
@@ -184,7 +204,9 @@ export default function FormView(){
     }
 
     return (
-     <DisplayContainer>
+        <div>
+            <NavBar></NavBar>
+            <DisplayContainer>
         <FormContainer>
             <LogForm >
 
@@ -195,7 +217,7 @@ export default function FormView(){
                 value={pokeData.name}
                 onChange={handleChange}
                 ></input>
-                <LabelError>{inputErrors.name}</LabelError>
+                <LabelError value="das">{inputErrors.name}</LabelError>
                 
                 <LabelForm>Health</LabelForm>
                 <input
@@ -275,8 +297,7 @@ export default function FormView(){
 
                 <LabelForm>Portrait</LabelForm>
                 <input 
-                disabled = {true}
-                type="text"
+                type="file"
                 name='image'
                 value={pokeData.image}
                 onChange={handleChange}
@@ -287,6 +308,8 @@ export default function FormView(){
             </LogForm >
         </FormContainer>
      </DisplayContainer>
+        </div>
+
 
     )
 }
